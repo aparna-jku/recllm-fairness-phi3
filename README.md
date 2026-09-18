@@ -2,7 +2,7 @@
 
 **MSc Artificial Intelligence Thesis · Johannes Kepler University Linz (JKU) · 2025**  
 **Student:** Aparna Krishna  
-**Supervisor:** Based on Deldjoo (2025) — *Understanding Biases in ChatGPT-based Recommender Systems*
+**Supervisor:** Deepak Kumar
 
 ---
 
