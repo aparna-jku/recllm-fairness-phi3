@@ -14,11 +14,8 @@ This project has two parts:
 
 1. **Phase 1** — We replicate Experiment 2 from Deldjoo (2025), which studied these biases using ChatGPT. We swap ChatGPT with the open-source **Phi-3-mini-4k-instruct** (3.8B parameters) to see if the same biases appear in a smaller, open-source model.
 
-2. **Phase 2** — We go beyond measurement. We implement **contrastive activation steering vectors** to *reduce* gender bias in Phi-3's recommendations at inference time, without any retraining.
+2. **Phase 2** — We implement **contrastive activation steering vectors** to *reduce* gender bias in Phi-3's recommendations at inference time, without any retraining.
 
-> **The key question:** Can we make Phi-3's music recommendations less gender-biased by surgically modifying its internal representations during generation?
-
----
 
 ## Based On
 
