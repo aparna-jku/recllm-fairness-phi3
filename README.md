@@ -366,10 +366,5 @@ Runtime  : ~7 hours total
 
 ---
 
-## License
-
-This project is for academic research purposes. The experimental framework is based on the original benchmark repository (MIT licensed). All code additions and results are released under MIT.
-
----
 
 
