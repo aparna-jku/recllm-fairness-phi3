@@ -169,7 +169,7 @@ We implement **contrastive activation steering** to reduce gender-based differen
 
 The idea: when Phi-3 processes a prompt saying "female user" vs "male user", its internal representations differ at every layer. We extract that difference as a vector, then subtract it during generation to make the model less sensitive to the gender label.
 
-## The Formula (from supervisor's whiteboard)
+## The Formula
 
 **Single-bias steering:**
 ```
