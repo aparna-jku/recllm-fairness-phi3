@@ -1,0 +1,19 @@
+condition,sample,ICL,Baseline Gini↓,Steered Gini↓,Gini Δ,Baseline Entropy↑,Steered Entropy↑,Entropy Δ,Baseline Cov,Steered Cov
+prompt_counterfact-False_sample-random_userDemo-gender_inter,sample-random,interact-zero-shot,-0.993,-0.99595,-0.00295,1.662,1.361,-0.301,0.00418,0.00236
+prompt_counterfact-False_sample-random_userDemo-gender_inter,sample-random,interact-ICL-Few-shot-1,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+prompt_counterfact-False_sample-random_userDemo-gender_inter,sample-random,interact-ICL-Few-shot-2,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+prompt_counterfact-False_sample-frequent_userDemo-gender_int,sample-frequent,interact-zero-shot,-0.99279,-0.99563,-0.00284,1.918,1.425,-0.493,0.00436,0.00255
+prompt_counterfact-False_sample-frequent_userDemo-gender_int,sample-frequent,interact-ICL-Few-shot-1,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+prompt_counterfact-False_sample-frequent_userDemo-gender_int,sample-frequent,interact-ICL-Few-shot-2,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+prompt_counterfact-False_sample-recent-frequent_userDemo-gen,sample-recent-frequent,interact-zero-shot,-0.99152,-0.99052,0.001,2.073,2.655,0.582,0.00527,0.00618
+prompt_counterfact-False_sample-recent-frequent_userDemo-gen,sample-recent-frequent,interact-ICL-Few-shot-1,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+prompt_counterfact-False_sample-recent-frequent_userDemo-gen,sample-recent-frequent,interact-ICL-Few-shot-2,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+recommendation_prompt_counterfact-False_sample-random_userDe,sample-random,interact-zero-shot,-0.986,-0.98647,-0.00046,3.857,3.757,-0.1,0.01182,0.01091
+recommendation_prompt_counterfact-False_sample-random_userDe,sample-random,interact-ICL-Few-shot-1,-0.98546,-0.98545,0.0,4.365,4.382,0.017,0.01436,0.01455
+recommendation_prompt_counterfact-False_sample-random_userDe,sample-random,interact-ICL-Few-shot-2,-0.98546,-0.98546,0.0,4.365,4.365,0.0,0.01436,0.01436
+recommendation_prompt_counterfact-False_sample-frequent_user,sample-frequent,interact-zero-shot,-0.98576,-0.98602,-0.00026,4.035,3.923,-0.112,0.01255,0.01182
+recommendation_prompt_counterfact-False_sample-frequent_user,sample-frequent,interact-ICL-Few-shot-1,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+recommendation_prompt_counterfact-False_sample-frequent_user,sample-frequent,interact-ICL-Few-shot-2,-0.98553,-0.9855,3e-05,4.313,4.33,0.017,0.01382,0.014
+recommendation_prompt_counterfact-False_sample-recent-freque,sample-recent-frequent,interact-zero-shot,-0.98566,-0.98562,4e-05,4.118,4.157,0.039,0.01291,0.01309
+recommendation_prompt_counterfact-False_sample-recent-freque,sample-recent-frequent,interact-ICL-Few-shot-1,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
+recommendation_prompt_counterfact-False_sample-recent-freque,sample-recent-frequent,interact-ICL-Few-shot-2,-0.98545,-0.98545,0.0,4.382,4.382,0.0,0.01455,0.01455
