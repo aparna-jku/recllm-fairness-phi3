@@ -503,7 +503,7 @@ response = generate_steered(
 
 ### Step 4 — Multi-bias steering (longer term)
 
-The supervisor's whiteboard showed the full formula:
+Based on the full formula:
 
 ```
 h' = h + λ · (V_gender + V_race + V_religion)
