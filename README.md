@@ -189,7 +189,7 @@ Where:
 
 ## How the Steering Vector is Computed
 
-The key insight: we don't use the Llama vectors provided by the supervisor (those are for Llama, hidden size 4096). We compute **Phi-3's own** gender steering vectors in its own representation space (hidden size 3072).
+The key insight: we don't use the Llama vectors already given (those are for Llama, hidden size 4096). We compute **Phi-3's own** gender steering vectors in its own representation space (hidden size 3072).
 
 **Step-by-step:**
 
@@ -344,6 +344,3 @@ Cell-by-cell guide:
 
 ---
 
-## License
-
-Academic research purposes. Experimental framework based on the original benchmark repository (MIT licensed). All code additions and results released under MIT.
