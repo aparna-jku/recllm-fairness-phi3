@@ -8,7 +8,6 @@
 
 ## What This Project Is About
 
-Large Language Models (LLMs) like ChatGPT are increasingly used as recommender systems. But they carry biases — if you tell the model a user is "female", it may recommend different music than if you say "male", even when the listening history is identical. This is **gender bias in RecLLMs**.
 
 This project has two parts:
 
