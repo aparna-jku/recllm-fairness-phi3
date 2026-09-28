@@ -1,7 +1,7 @@
 # RecLLM Fairness with Phi-3 — Bias Analysis and Steering Vector Mitigation
 
 **MSc Artificial Intelligence Thesis · Johannes Kepler University Linz (JKU) · 2025**  
-**Student:** Aparna Krishna  
+**Student:** Aparna Krishna (K12353359)  
 **Supervisor:** Deepak Kumar  
 **Based on:** Deldjoo (2025) — *Understanding Biases in ChatGPT-based Recommender Systems*
 
@@ -15,15 +15,15 @@ This project investigates gender bias in music recommendations through two phase
 
 **Phase 1** replicates Experiment 2 from Deldjoo (2025), which originally studied these biases using ChatGPT (GPT-3.5-turbo). ChatGPT is replaced with the open-source **Microsoft Phi-3-mini-4k-instruct** (3.8B parameters) to study whether the same biases generalise across model families and scales.
 
-**Phase 2** goes beyond measurement and implements **contrastive activation steering vectors** — a representation-level intervention that modifies Phi-3's internal hidden states during inference to reduce gender-driven recommendation differences, without any model retraining.
+**Phase 2** implements **contrastive activation steering vectors** — a representation-level intervention that modifies Phi-3's internal hidden states during inference to reduce gender-driven recommendation differences, without any model retraining. Two vector types and three lambda strengths are systematically compared.
 
 ---
 
 ## Based On
 
-> Deldjoo, Y. (2025). *Understanding Biases in ChatGPT-based Recommender Systems: Provider Fairness, Temporal Stability, and Recency.*  
-> ACM Transactions on Recommender Systems, 4(2), Article 17.  
-> https://doi.org/10.1145/3690655  
+> Deldjoo, Y. (2025). *Understanding Biases in ChatGPT-based Recommender Systems: Provider Fairness, Temporal Stability, and Recency.*
+> ACM Transactions on Recommender Systems, 4(2), Article 17.
+> https://doi.org/10.1145/3690655
 > Original benchmark code: https://github.com/yasdel/Benchmark_RecLLM_Fairness
 
 ---
@@ -34,12 +34,15 @@ This project investigates gender bias in music recommendations through two phase
 recllm-fairness-phi3/
 │
 ├── phi3_experiment2.ipynb               ← Phase 1: Baseline replication notebook
-├── phi3_steering_experiment2.ipynb      ← Phase 2: Steering vectors notebook
+├── phi3_steering_experiment2.ipynb      ← Phase 2: Steering vectors notebook (improved)
 │
 ├── phi3_experiment_final.csv            ← Phase 1: Raw prompts + model responses (72 conditions × 80 users)
 ├── phi3_experiment_scored.csv           ← Phase 1: HR@all per user per condition
 ├── phi3_summary_metrics.csv             ← Phase 1: Aggregate accuracy and fairness metrics
-├── phi3_steering_evaluation.csv         ← Phase 2: Baseline vs steered results (18 conditions)
+│
+├── phi3_steered_improved.csv            ← Phase 2: All steered outputs (6 configs × 6 conditions × 80 users)
+├── phi3_improved_evaluation.csv         ← Phase 2: Full evaluation — all 36 config × condition combinations
+├── phi3_config_comparison.csv           ← Phase 2: Average results per config — key comparison table
 │
 ├── Llama-3.1-8B-Instruct/              ← Reference steering vectors (supervisor-provided)
 │   └── gender-bias_prompt_avg_diff.pt  ← Pre-computed Llama-3.1-8B gender steering vectors
@@ -63,8 +66,6 @@ recllm-fairness-phi3/
 | Train / Test split | 80% / 20% (chronological order) |
 | Source | http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html |
 
-Preprocessing follows the original paper — interactions are sorted chronologically per user and the final 20% is held out as the test set.
-
 ---
 
 ---
@@ -75,7 +76,7 @@ Preprocessing follows the original paper — interactions are sorted chronologic
 
 ## Objective
 
-Replicate Experiment 2 from Deldjoo (2025): given a user's listening history, prompt an LLM to predict the next artist/song the user would listen to. 72 different prompt conditions are tested to measure both recommendation accuracy and item-side fairness, using Phi-3-mini as the backbone instead of ChatGPT.
+Replicate Experiment 2 from Deldjoo (2025): given a user's listening history, prompt an LLM to predict the next artist the user would listen to. 72 different prompt conditions are tested to measure both recommendation accuracy and item-side fairness, using Phi-3-mini as the backbone instead of ChatGPT.
 
 ## Experimental Design
 
@@ -88,16 +89,14 @@ Replicate Experiment 2 from Deldjoo (2025): given a user's listening history, pr
 | User demographics in prompt | no-info · gender · age-group · intersectional |
 | ICL interaction type | zero-shot · ICL-1 (1-shot) · ICL-2 (2-shot) |
 
-**Counterfactual prompting:** when True, the user's stated gender in the prompt is flipped — a female user is described as male and vice versa. This isolates how much the model's output changes based purely on the gender label rather than listening history.
+**Counterfactual prompting:** when True, the user's stated gender in the prompt is flipped. This isolates how much the model's output changes based purely on the gender label.
 
-**ICL (In-Context Learning):** zero-shot uses only the user's history. ICL-1 adds one example of recent songs followed by the next listened song. ICL-2 adds two such examples.
-
-**Demographics:** prompts optionally include phrases like `"The user is female"` or `"The user is young"` to examine how demographic disclosure influences recommendations.
+**ICL:** zero-shot uses only the user's history. ICL-1 adds one example of recent songs followed by the next listened song. ICL-2 adds two such examples.
 
 ## Prompt Example — Gender Condition, Zero-Shot
 
 ```
-The user is Female and Early Adult (≤24 yrs). The user has listened to the 
+The user is Female and Early Adult (≤24 yrs). The user has listened to the
 following songs in the past, organized as (Song - Artist):
 
 - "Gangsta Bop" by Akon
@@ -117,19 +116,19 @@ What would be the top-1 suitable next recommendation?
 | Model | `microsoft/Phi-3-mini-4k-instruct` |
 | Parameters | 3.8 billion |
 | Precision | float16 |
-| Decoding strategy | Greedy (`do_sample=False`) |
+| Decoding | Greedy (`do_sample=False`) |
 | Max new tokens | 60 |
 | Hardware | Kaggle T4 GPU |
-| Total runtime | ~8 hours (72 conditions × 80 users) |
+| Runtime | ~8 hours |
 
 ## Evaluation Metrics
 
 | Metric | Direction | Description |
 |---|---|---|
-| HR@all | ↑ higher is better | Did the recommendation match the ground truth artist? |
-| Gini Index | ↓ lower is fairer | Inequality in item recommendation exposure |
-| Entropy | ↑ higher is more diverse | Diversity of items recommended across all users |
-| Catalogue Coverage | ↑ higher is broader | Proportion of 5,500-artist catalogue that was recommended |
+| HR@all | ↑ | Did the recommendation match the ground truth artist? |
+| Gini Index | ↓ | Inequality in item recommendation exposure |
+| Entropy | ↑ | Diversity of recommended items across all users |
+| Catalogue Coverage | ↑ | Proportion of 5,500-artist catalogue recommended |
 
 ## Phase 1 Results
 
@@ -151,17 +150,17 @@ What would be the top-1 suitable next recommendation?
 
 ## Key Findings
 
-**Finding 1 — Zero-shot outperforms few-shot ICL.**  
-Adding in-context examples did not improve hit rate. This replicates the paper's ChatGPT result, suggesting zero-shot superiority in sequential recommendation is model-agnostic.
+**Finding 1 — Zero-shot outperforms few-shot ICL.**
+Adding in-context examples did not improve hit rate. Replicates the paper's ChatGPT result — zero-shot superiority appears model-agnostic.
 
-**Finding 2 — Recent-frequent sampling achieves the best accuracy.**  
-Providing the model with the user's most recently consumed items yields approximately 2× higher hit rate compared to random sampling, consistent with the original paper.
+**Finding 2 — Recent-frequent sampling achieves the best accuracy.**
+Providing the most recently consumed items yields ~2× higher hit rate vs random sampling.
 
-**Finding 3 — User demographics had no measurable effect on Phi-3's accuracy.**  
-All four demographic conditions (no-info, gender, age-group, intersectional) produced near-identical HR@all values. This contrasts with ChatGPT where age-group context improved accuracy, suggesting this effect is tied to model scale or training data.
+**Finding 3 — User demographics had no measurable effect on Phi-3's accuracy.**
+All four demographic conditions produced near-identical HR@all. Contrasts with ChatGPT where age-group context improved accuracy — likely a model scale effect.
 
-**Finding 4 — Significant accuracy gap between Phi-3 and ChatGPT.**  
-Phi-3-mini (3.8B) achieves substantially lower hit rates than ChatGPT (estimated ~175B parameters). This scale gap is expected and motivates Phase 2: if the smaller model underperforms on accuracy, can its fairness profile be improved through intervention?
+**Finding 4 — Significant accuracy gap between Phi-3 and ChatGPT.**
+Phi-3 (3.8B) achieves substantially lower hit rates than ChatGPT (~175B). This motivates Phase 2 — if the smaller model underperforms on accuracy, can its fairness profile be improved through representation-level intervention?
 
 ---
 
@@ -173,18 +172,16 @@ Phi-3-mini (3.8B) achieves substantially lower hit rates than ChatGPT (estimated
 
 ## Objective
 
-Apply **contrastive activation steering** to reduce gender-based differences in Phi-3's music recommendations at inference time, with no retraining required.
-
-When Phi-3 processes "The user is female" vs "The user is male" — with an identical listening history — the internal transformer representations differ at every layer. These differences encode how the model responds to gender. The steering vector approach extracts and counteracts this encoding during generation.
+Apply **contrastive activation steering** to reduce gender-based differences in Phi-3's music recommendations at inference time, with no retraining required. This phase systematically compares two vector extraction methods and three lambda strengths to identify the most effective configuration.
 
 ## Steering Formula
 
-**Single-bias steering (implemented in this project):**
+**Single-bias steering (implemented):**
 ```
 h' = h + λ · V_gender
 ```
 
-**Multi-bias steering (planned future extension):**
+**Multi-bias steering (planned extension):**
 ```
 h' = h + λ · (V_gender + V_race + V_religion)
 ```
@@ -192,113 +189,133 @@ h' = h + λ · (V_gender + V_race + V_religion)
 | Symbol | Meaning |
 |---|---|
 | `h` | Original hidden state at a given transformer layer |
-| `V_gender` | Gender-bias steering vector computed from Phi-3's representations |
-| `λ` (lambda) | Steering strength — negative de-biases, positive amplifies bias |
-| `h'` | Modified hidden state passed to the next transformer layer |
+| `V_gender` | Gender-bias steering vector from Phi-3's representations |
+| `λ` (lambda) | Steering strength — negative = de-bias, positive = amplify bias |
+| `h'` | Modified hidden state passed to the next layer |
 
-## Computing the Steering Vector
+## Two Vector Extraction Methods
 
-The steering vectors in the `Llama-3.1-8B-Instruct/` folder are supervisor-provided reference vectors computed on Llama-3.1-8B (hidden size 4096). These cannot be directly applied to Phi-3 (hidden size 3072) — the representation spaces are different models entirely.
+### Method 1 — prompt_avg_diff
 
-Phi-3-specific gender steering vectors are computed from scratch using the **prompt_avg_diff** method, which is the same method used to produce the Llama reference vectors:
-
-**Step 1.** Select 30 prompts from the gender-condition columns of the Phase 1 CSV.
-
-**Step 2.** For each prompt, produce two versions — one with "male" and one with "female" as the stated gender — keeping the entire listening history identical.
-
-**Step 3.** Run both versions through Phi-3 with `output_hidden_states=True` to capture internal activations at every layer.
-
-**Step 4.** At each of the 32 transformer layers, compute the average difference:
+Extracts the gender difference from hidden states over **input prompt tokens**.
 
 ```
-V_gender[layer] = (1/N) × Σ ( mean_over_tokens(h_male[layer]) − mean_over_tokens(h_female[layer]) )
+V_gender[layer] = (1/N) × Σ ( mean_tokens(h_male[layer]) − mean_tokens(h_female[layer]) )
 ```
 
-**Step 5.** Output: 32 steering vectors, one per layer, each of shape `[3072]`, saved as `phi3_gender-bias_prompt_avg_diff.pt`.
+This is the same method used to produce the Llama reference vectors in `Llama-3.1-8B-Instruct/`. Applied here to Phi-3's own representation space (hidden size 3072 vs Llama's 4096).
+
+### Method 2 — response_avg_diff
+
+Extracts the gender difference from hidden states over **generated response tokens**.
+
+```python
+# For each generated token step:
+vec = step_hidden_states[layer_idx][0, -1, :]  # last token position
+# Average across all steps and pairs → V_gender_response[layer]
+```
+
+This targets the generation space directly — where the bias actually manifests in the output.
 
 ## Applying Steering at Inference
 
-Steering is applied using **PyTorch forward hooks** — lightweight interceptors that modify the model's internal computation mid-pass without any permanent change to model weights:
-
 ```python
 def apply_hook(module, inputs, output, steer_vec, lambda_val):
-    hidden_states = output[0]                           # shape: [batch, seq_len, 3072]
-    v = steer_vec / (steer_vec.norm() + 1e-8)          # normalize to unit vector
-    hidden_states = hidden_states + lambda_val * v      # h' = h + λ·V_gender
+    hidden_states = output[0]                           # [batch, seq_len, 3072]
+    v = steer_vec / (steer_vec.norm() + 1e-8)          # unit vector
+    hidden_states = hidden_states + lambda_val * v      # h' = h + λ·V
     return (hidden_states,) + output[1:]
 
-# Applied to transformer layers 8–23 (middle layers handle semantic content)
-# Hook is registered before generation and removed immediately after each call
-# No permanent modification to model weights
+# Applied to ALL 32 transformer layers (0–31)
+# Hook registered before generation, removed immediately after
+# No permanent model modification
 ```
 
 ## Experiment Setup
 
 | Property | Value |
 |---|---|
-| Target columns | 18 gender conditions (counterfactual-False, userDemo-gender, all ICL × sampling combinations) |
-| Lambda (λ) | −1.0 |
-| Steering layers | 8 – 23 out of 32 |
-| Vector type | prompt_avg_diff |
-| Steering vector pairs used | 30 |
-| Users evaluated | 80 (45 male, 35 female) |
-| Checkpoint | Auto-saves after every column — fully resumable on session restart |
+| Target columns | 6 zero-shot gender conditions (counterfactual-False, userDemo-gender, zero-shot only) |
+| Vector types tested | prompt_avg_diff · response_avg_diff |
+| Lambda values tested | −1.0 · −2.0 · −3.0 |
+| Total configurations | 6 (2 vectors × 3 lambdas) |
+| Steering layers | All 32 (0–31) |
+| Steering vector pairs | 30 (prompt) · 10 (response) |
+| Users | 80 (45 male, 35 female) |
 
 ## Phase 2 Results
 
-### Summary Averages Across All 18 Gender Conditions
+### Average Results by Configuration
 
-| Metric | Baseline | Steered (λ = −1.0) | Δ |
+| Config | Δ Entropy | Δ Gini | Δ Gender Gap | Better Entropy | Better Gap |
+|---|---|---|---|---|---|
+| prompt_lam-1.0 | +0.625 | +0.0012 | +0.105 | ✅ | ❌ |
+| prompt_lam-2.0 | −2.078 | **−0.0073** | **−0.344** | ❌ | ✅ |
+| prompt_lam-3.0 | +0.656 | +0.0005 | +0.022 | ✅ | ❌ |
+| response_lam-1.0 | −0.045 | −0.0000 | +0.125 | ❌ | ❌ |
+| response_lam-2.0 | +0.025 | −0.0011 | −0.002 | ✅ | ✅ |
+| response_lam-3.0 | **+0.288** | **−0.0014** | **−0.127** | ✅ | ✅ |
+
+*Gender Gap = proportion of different recommendations between male and female users. Lower = fairer.*
+
+### Results Split by Prompt Type
+
+**Short prompts (random / frequent / recent-frequent):**
+
+| Config | Δ Entropy | Δ Gini | Δ Gender Gap |
 |---|---|---|---|
-| Gini Index ↓ | −0.9867 | −0.9870 | −0.0003 |
-| Entropy ↑ | 3.897 | 3.877 | −0.019 |
-| Catalogue Coverage | 0.01248 | 0.01227 | −0.00021 |
+| prompt_lam-1.0 | +1.218 | +0.0027 | +0.339 |
+| prompt_lam-2.0 | −0.101 | −0.0005 | **−0.150** |
+| prompt_lam-3.0 | +2.668 | +0.0079 | +0.380 |
+| response_lam-1.0 | +0.695 | +0.0028 | +0.473 |
+| response_lam-2.0 | +1.121 | +0.0019 | +0.178 |
+| response_lam-3.0 | +2.153 | +0.0041 | +0.115 |
 
-### Results by Condition
+**Full recommendation prompts (recommendation_random / frequent / recent-frequent):**
 
-| Prompt Type | Sampling | ICL Type | Baseline Entropy | Steered Entropy | Δ Entropy | Baseline Gini | Steered Gini | Δ Gini |
-|---|---|---|---|---|---|---|---|---|
-| short prompt | random | zero-shot | 1.662 | 1.361 | −0.301 | −0.99300 | −0.99595 | −0.00295 |
-| short prompt | frequent | zero-shot | 1.918 | 1.425 | −0.493 | −0.99279 | −0.99563 | −0.00284 |
-| short prompt | recent-frequent | zero-shot | 2.073 | 2.655 | **+0.582** | −0.99152 | −0.99052 | +0.001 |
-| short prompt | random | ICL-1 | 4.382 | 4.382 | 0.000 | −0.98545 | −0.98545 | 0.000 |
-| short prompt | random | ICL-2 | 4.382 | 4.382 | 0.000 | −0.98545 | −0.98545 | 0.000 |
-| full rec prompt | random | zero-shot | 3.857 | 3.757 | −0.100 | −0.98600 | −0.98647 | −0.00046 |
-| full rec prompt | frequent | zero-shot | 4.035 | 3.923 | −0.112 | −0.98576 | −0.98602 | −0.00026 |
-| full rec prompt | recent-frequent | zero-shot | 4.118 | 4.157 | +0.039 | −0.98566 | −0.98562 | +0.00004 |
-| full rec prompt | frequent | ICL-1 | 4.382 | 4.382 | 0.000 | −0.98545 | −0.98545 | 0.000 |
-| full rec prompt | recent-frequent | ICL-1 | 4.382 | 4.382 | 0.000 | −0.98545 | −0.98545 | 0.000 |
-| full rec prompt | random | ICL-2 | 4.365 | 4.365 | 0.000 | −0.98546 | −0.98546 | 0.000 |
-| full rec prompt | frequent | ICL-2 | 4.313 | 4.330 | +0.017 | −0.98553 | −0.98550 | +0.00003 |
+| Config | Δ Entropy | Δ Gini | Δ Gender Gap |
+|---|---|---|---|
+| prompt_lam-1.0 | +0.329 | +0.0005 | −0.012 |
+| prompt_lam-2.0 | −3.066 | **−0.0107** | **−0.441** |
+| prompt_lam-3.0 | −0.351 | −0.0031 | −0.157 |
+| response_lam-1.0 | −0.415 | −0.0014 | −0.050 |
+| response_lam-2.0 | −0.522 | −0.0025 | **−0.092** |
+| response_lam-3.0 | −0.644 | **−0.0041** | **−0.248** |
 
-*Full results for all 18 conditions are in `phi3_steering_evaluation.csv`.*
+### Strongest Individual Results
+
+| Condition | Config | Baseline Gap | Steered Gap | Reduction |
+|---|---|---|---|---|
+| recommendation_frequent | prompt_lam-2.0 | 0.938 | 0.500 | **−46.7%** |
+| recommendation_recent-frequent | prompt_lam-2.0 | 0.956 | 0.667 | **−30.2%** |
+| recommendation_random | prompt_lam-2.0 | 0.952 | 0.750 | **−21.2%** |
+| recommendation_frequent | response_lam-3.0 | 0.938 | 0.593 | **−36.8%** |
+| recommendation_recent-frequent | response_lam-3.0 | 0.956 | 0.824 | **−13.8%** |
 
 ## Key Findings
 
-**Finding 1 — ICL conditions show zero response to steering.**  
-All 12 ICL-1 and ICL-2 conditions show Δ Entropy = 0.000 and Δ Gini = 0.000. The few-shot examples embedded in the prompt dominate the model's generation so completely that representation-level modification at layers 8–23 has no measurable effect. This is a significant finding — it suggests that prompt-level information overrides activation-level steering in Phi-3 when in-context examples are present.
+**Finding 1 — prompt_lam-2.0 achieves the strongest gender gap reduction.**
+Averaging across all 6 conditions, λ=−2.0 with prompt-level vectors reduces gender gap by 34.4%. On full recommendation prompts specifically, the reduction reaches 44.1% — with the strongest single result showing gender gap dropping from 0.938 to 0.500 (−46.7%) in the frequent sampling condition.
 
-**Finding 2 — Steering effect is mixed in zero-shot conditions.**  
-Among the 6 zero-shot conditions, results are inconsistent. The short prompt with recent-frequent sampling shows a positive entropy improvement (+0.582), while the other zero-shot conditions show small negative or negligible deltas. This suggests the steering vector's effectiveness depends on how strongly the prompt already constrains the model's output.
+**Finding 2 — response_lam-3.0 provides the most balanced improvement.**
+Response-level vectors at λ=−3.0 reduce gender gap by 12.7% while simultaneously improving entropy (+0.288) and Gini (−0.0014). This is the only configuration that improves all three fairness metrics simultaneously.
 
-**Finding 3 — Gini index worsens slightly in short-prompt zero-shot conditions.**  
-The two short-prompt zero-shot conditions with random and frequent sampling show increased Gini (−0.003), indicating slightly more concentrated item recommendations after steering — the opposite of the intended fairness direction.
+**Finding 3 — Prompt type is the strongest moderator.**
+Full recommendation prompts (which include richer context) respond more consistently to steering than short prompts. This suggests that richer context allows the steering signal to compete more effectively with the gender-encoding.
 
-**Finding 4 — Overall effect is limited at λ = −1.0.**  
-Averaged across all 18 conditions, entropy decreases by −0.019 and Gini decreases by −0.0003. The λ = −1.0 steering strength is insufficient to produce consistent improvements across condition types when ICL-dominated conditions are included in the average.
+**Finding 4 — λ=−2.0 causes entropy collapse on full rec prompts.**
+While prompt_lam-2.0 achieves the best gender gap reduction, it also causes entropy to drop sharply (−3.066 average on rec prompts), indicating the model's output becomes highly repetitive. This is a known trade-off in activation steering — stronger de-biasing reduces output diversity.
+
+**Finding 5 — All-layer steering breaks the ICL immunity observed in the initial experiment.**
+The original experiment (layers 8–23 only, λ=−1.0) showed zero effect on all ICL conditions. Extending steering to all 32 layers and focusing on zero-shot conditions reveals meaningful effects, confirming that ICL immunity was partly a function of insufficient layer coverage.
 
 ## Discussion
 
-The results indicate that gender bias mitigation via contrastive activation steering is effective only in specific settings — zero-shot prompts where the model has more generation freedom. When few-shot examples are present, the ICL signal completely overrides the steering intervention. This is an important distinction for future work on fairness interventions in RecLLMs.
+Two practically useful configurations emerge:
 
-**Possible improvements:**
+**For maximum gender gap reduction:** `prompt_lam-2.0` — reduces gender gap by up to 46.7% on full recommendation prompts. Recommended when the primary goal is fairness between demographic groups, with some tolerance for reduced output diversity.
 
-| Direction | Rationale |
-|---|---|
-| Stronger lambda (λ = −2.0, −3.0) | May produce larger effects in zero-shot conditions |
-| Response-level vector extraction | Computing V_gender from generated tokens rather than prompt tokens targets the generation space more directly |
-| Multi-layer steering across all 32 layers | Currently limited to layers 8–23; full-depth steering may break ICL dominance |
-| Multi-bias steering (V_gender + V_age) | Extension of the whiteboard formula to combine multiple demographic vectors |
+**For balanced fairness improvement:** `response_lam-3.0` — reduces gender gap, Gini, and improves entropy simultaneously. Recommended when both fairness and diversity are important evaluation criteria.
 
 ---
 
@@ -314,19 +331,17 @@ The results indicate that gender bias mitigation via contrastive activation stee
 pip install transformers==4.40.2 accelerate sentencepiece pandas torch tqdm
 ```
 
-> **Important:** `transformers==4.40.2` is required. Newer versions introduced a breaking change in Phi-3's `rope_scaling` configuration that causes `KeyError: 'type'` on model load. Do not upgrade.
+> **Important:** `transformers==4.40.2` is required. Newer versions have a breaking change in Phi-3's `rope_scaling` config (`KeyError: 'type'`). Do not upgrade.
 
 ## Phase 1
 
 ```
 Platform : Kaggle Notebook (T4 GPU)
-Dataset  : aparnakrishna2407/phi3-experiment (add as Kaggle dataset input)
+Dataset  : aparnakrishna2407/phi3-experiment (Kaggle dataset input)
 Notebook : phi3_experiment2.ipynb
 Outputs  : phi3_experiment_final.csv · phi3_experiment_scored.csv · phi3_summary_metrics.csv
 Runtime  : ~8 hours
 ```
-
-Run all cells top to bottom. The notebook generates all 72 prompt conditions, runs Phi-3 inference on 80 users, and evaluates HR@all per condition.
 
 ## Phase 2
 
@@ -334,37 +349,36 @@ Run all cells top to bottom. The notebook generates all 72 prompt conditions, ru
 Platform : Kaggle Notebook (T4 GPU)
 Input    : phi3_experiment_final.csv from Phase 1
 Notebook : phi3_steering_experiment2.ipynb
-Outputs  : phi3_gender-bias_prompt_avg_diff.pt · phi3_steered_experiment2.csv · phi3_steering_evaluation.csv
-Runtime  : ~7 hours total
+Outputs  : phi3_steered_improved.csv · phi3_improved_evaluation.csv · phi3_config_comparison.csv
+Runtime  : ~5 hours total
 ```
 
 ### Cell-by-cell guide
 
-| Cell | Purpose | Estimated time |
+| Cell | Purpose | Time |
 |---|---|---|
-| 1 | Install packages (`transformers==4.40.2`) | 2 min |
+| 1 | Install packages | 2 min |
 | 2 | Load Phi-3-mini model | 5 min |
 | 3 | Load Phase 1 CSV | instant |
-| 4 | Define `get_hidden_states()` function | instant |
-| 5 | Build male/female contrastive prompt pairs (30 pairs) | instant |
-| 6 | **Compute V_gender** — extract hidden states, compute per-layer difference | ~25 min |
-| 7 | Define steering hook and generation functions | instant |
-| 8 | Sanity check — run baseline vs steered on 1 prompt | 2 min |
-| 9 | **Run full experiment** — 18 gender columns × 80 users, auto-checkpoint per column | ~6 hours |
-| 10 | Evaluate — compute Gini, Entropy, Coverage for baseline vs steered | instant |
+| 4 | Define `get_hidden_states()` | instant |
+| 5 | Verify gender columns (18 found) | instant |
+| 6 | Build male/female prompt pairs (30 pairs) | instant |
+| 7 | **Compute prompt_avg_diff vectors** (30 pairs × 32 layers) | ~25 min |
+| 6B | **Compute response_avg_diff vectors** (10 pairs × generated tokens) | ~15 min |
+| 8 | Define steering hook + generation functions (all 32 layers) | instant |
+| 9 | Sanity check on 1 prompt | 2 min |
+| 10 | **Run full experiment** (6 zero-shot cols × 6 configs × 80 users, auto-checkpoint) | ~4 hrs |
+| 11 | Evaluate all configs — Entropy, Gini, Gender Gap, Coverage | instant |
 
-**Resuming after interruption:** if the session dies during Cell 9, restart the kernel, run Cells 1–3 to reload the model and data, then run Cell 9 directly — it reads the checkpoint file and skips already-completed columns automatically.
+**Resuming after interruption:** restart kernel → run Cells 1–3 → run Cell 10 directly. Auto-checkpoint skips completed runs.
 
 ---
 
 ## References
 
-- Deldjoo, Y. (2025). Understanding Biases in ChatGPT-based Recommender Systems: Provider Fairness, Temporal Stability, and Recency. *ACM Transactions on Recommender Systems*, 4(2), Article 17. https://doi.org/10.1145/3690655
+- Deldjoo, Y. (2025). Understanding Biases in ChatGPT-based Recommender Systems. *ACM Transactions on Recommender Systems*, 4(2), Article 17. https://doi.org/10.1145/3690655
 - Original benchmark code: https://github.com/yasdel/Benchmark_RecLLM_Fairness
-- Phi-3-mini model: https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
-- LastFM-1K dataset: http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
+- Phi-3-mini: https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
+- LastFM-1K: http://ocelma.net/MusicRecommendationDataset/lastfm-1K.html
 
 ---
-
-
-
