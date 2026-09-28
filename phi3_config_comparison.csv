@@ -1,0 +1,7 @@
+Config,Δ_Entropy,Δ_Gini,Δ_GenderGap,Better_Entropy,Better_GenderGap
+prompt_lam-1.0,0.625,0.0012,0.1048,True,False
+prompt_lam-2.0,-2.0777,-0.0073,-0.3439,False,True
+prompt_lam-3.0,0.6555,0.0005,0.0223,True,False
+response_lam-1.0,-0.045,-0.0,0.1246,False,False
+response_lam-2.0,0.0253,-0.0011,-0.0019,True,True
+response_lam-3.0,0.288,-0.0014,-0.127,True,True
